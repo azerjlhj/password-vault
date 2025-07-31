@@ -1,25 +1,34 @@
 import express from "express";
 import bodyParser from "body-parser";
 import pg from "pg";
-import dotenv from "dotenv";
+import env from "dotenv";
 import session from "express-session";        // For user sessions
 import passport from "passport";              // For authentication
 import { Strategy } from "passport-local";    // For local authentication
 import bcrypt from "bcrypt";                  // For password hashing
 
-dotenv.config({ quiet: true }); // Load environment variables
-
 const app = express();
 const port = 3000;
+const saltRounds = 10;
+env.config({ quiet: true }); // Load environment variables
 
-app.use(session({
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: true,
-}));
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: true,
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24,
+      },
+  })
+);
 
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static("public"));
+
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 const db = new pg.Client({
   user: process.env.PG_USER,
@@ -42,12 +51,12 @@ app.get("/register", (req, res) => {
     res.render("register"); 
 });
 
+app.get("/vault", (req, res) => {
+    res.render("vault");  // Show vault (protection can be added later)
+});
+
 // Set view engine
 app.set("view engine", "ejs");
-
-// Initialize Passport
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Start server
 app.listen(port, () => {
